@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Meta tags for character set, viewport settings, and theme color -->
+    <meta charset='UTF-8' />
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <meta name="theme-color" content="#005555" />
+    
+    <!-- Title of the page -->
+    <title>Audio Language Tracking</title>
+    
+    <!-- Meta tags for mobile app capability -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- External script and stylesheet links -->
+    <script src="https://unpkg.com/wavesurfer.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+        integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    
+    <!-- CSS stylesheet links -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+    
+    <!-- Custom Javascript and Stylesheet -->
+    <script src="audiovideo-wavesufer.js"></script>
+    <link rel="stylesheet" href="audiovideo-stylesheet.css">
+</head>
+
+<body>
+    <!-- Hidden div to store video document -->
+    <div id='document-video' style="display: none;">{{ task.input.taskObject | grant_read_access }}</div>
+    
+    <!-- Hidden div to store metadata -->
+    <div id='document-metadata' style="display: none;">
+        {
+        "categories":{
+            "language":["English","Hindi","Spanish","French","Italian","Portuguese","German","Dutch"],
+            "speaker":["Customer","Representative"]
+        }
+        }
+    </div>
+
+    <!-- Main form for annotation -->
+    <crowd-form>
+        <main role="main">
+            <div class="container-fluid">
+                <div class="row">
+                    <!-- Left panel for displaying video -->
+                    <div class="col-5 imgdisplay">
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 id="imgtitle" class="text-center"></h5>
+                            </div>
+                        </div>
+                        <div id="videopanel" class="videopanel centered text-center">
+                            <audio id="video" pposter="" ssrc="mira640.mp4" data-ckin="default" data-overlay="0"
+                                ddata-title=""></audio>
+                            <div class="wavecontainer">
+                                <div id="waveform" style="width: 5000px; height: 150px;"></div>
+                            </div>
+                            <div id="videotrackanotate"></div>
+                        </div>
+                    </div>
+                    <!-- Right panel for annotation inputs -->
+                        <div id="report"></div>
+                        <br><br>
+                        <div class="row">
+                            <div class="col-6">
+                                <p><strong>Speech/Non-Speech:</strong></p>
+                                <label class="radio">
+                                    <input type="radio" name="speechNonSpeech" value="speech" style="width: 20px;">
+                                    Speech
+                                </label>
+                                <label class="radio">
+                                    <input type="radio" name="speechNonSpeech" value="non-speech" style="width: 20px;">
+                                    Non-Speech
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <p><strong>Background Noise:</strong></p>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="backgroundNoise" value="traffic" style="width: 20px;">
+                                    Traffic
+                                </label>
+                                <br>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="backgroundNoise" value="music" style="width: 20px;">
+                                    Music
+                                </label>
+                                <br>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="backgroundNoise" value="ambient" style="width: 20px;">
+                                    Ambient Noise
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Add more rows for additional labels -->
+                        <div class="row">
+                            <div class="col-6">
+                                <p><strong>Speaker Gender:</strong></p>
+                                <label class="radio">
+                                    <input type="radio" name="speakerGender" value="male" style="width: 20px;">
+                                    Male
+                                </label>
+                                <label class="radio">
+                                    <input type="radio" name="speakerGender" value="female" style="width: 20px;">
+                                    Female
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <p><strong>Environmental Sounds:</strong></p>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="environmentalSounds" value="doorbell" style="width: 20px;">
+                                    Doorbell
+                                </label>
+                                <br>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="environmentalSounds" value="footsteps" style="width: 20px;">
+                                    Footsteps
+                                </label>
+                                <br>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="environmentalSounds" value="birdsChirping" style="width: 20px;">
+                                    Birds Chirping
+                                </label>
+                            </div>
+                        </div>
+                        <br><br>
+                        <crowd-text-area id="textTranslationFinalArea" name="textTranslationFinal" rows="4" value="{{ task.input.transcription }}"></crowd-text-area>
+                        <br>
+                        <div class="mt-2">
+                            <p><strong>Rate the Overall Quality</strong></p>
+                            <div class="rate">
+                                <input type="radio" id="star5" name="rate" value="5" />
+                                <label for="star5" title="text">5 stars</label>
+                                <input type="radio" id="star4" name="rate" value="4" />
+                                <label for="star4" title="text">4 stars</label>
+                                <input type="radio" id="star3" name="rate" value="3" />
+                                <label for="star3" title="text">3 stars</label>
+                                <input type="radio" id="star2" name="rate" value="2" />
+                                <label for="star2" title="text">2 stars</label>
+                                <input type="radio" id="star1" name="rate" value="1" />
+                                <label for="star1" title="text">1 star</label>
+                            </div>
+                            <br><br>
+                            <br>
+                            <crowd-button id="submitButton">Submit Annotation</crowd-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <input name="annotations" id="annotations" type="hidden">
+        <!-- Prevent crowd-form from creating its own button -->
+        <crowd-button form-action="submit" style="display: none;"></crowd-button>
+    </crowd-form>
+</body>
+
+</html>
