@@ -43,7 +43,8 @@ To use the application, follow these steps:
    - In the CloudFront console, create a new distribution.
    - Set the origin to point to your S3 bucket.
    - Configure cache settings and distribution settings as needed.
-3. **Update URLs**: Ensure that the URLs in your HTML files point to the correct paths for your CloudFront distribution.
+3. **Update URLs**: Ensure that the URLs in your HTML files point to the correct paths for your CloudFront distribution here -
+<img src="docs/js-css.png" alt="JS-CSS" width="50%">
 
 ### Customizing the Template
 
