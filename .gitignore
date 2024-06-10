@@ -1,0 +1,44 @@
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# dotenv environment variables file
+.env
+
+# Mac OS system files
+.DS_Store
+
+# AWS credential files
+.aws
+
+# IDE specific files
+.vscode/
+.idea/
+
+# Build output
+dist/
+build/
+
+# Temporary files
+tmp/
+temp/
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
