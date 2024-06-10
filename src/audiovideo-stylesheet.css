@@ -1,0 +1,422 @@
+
+  #waveform {
+      margin-top: 10px;
+      background-color: #e1e6d5;
+  } 
+  
+    crowd-text-area {
+    border: 1px solid grey;
+  }
+  
+  *{
+    margin: 0;
+    padding: 0;
+}
+.rate {
+    float: left;
+    height: 46px;
+    padding: 0 10px;
+}
+.rate:not(:checked) > input {
+    position:absolute;
+    top:-9999px;
+}
+.rate:not(:checked) > label {
+    float:right;
+    width:1em;
+    overflow:hidden;
+    white-space:nowrap;
+    cursor:pointer;
+    font-size:30px;
+    color:#ccc;
+}
+.rate:not(:checked) > label:before {
+    content: '★ ';
+}
+.rate > input:checked ~ label {
+    color: #ffc700;    
+}
+.rate:not(:checked) > label:hover,
+.rate:not(:checked) > label:hover ~ label {
+    color: #deb217;  
+}
+.rate > input:checked + label:hover,
+.rate > input:checked + label:hover ~ label,
+.rate > input:checked ~ label:hover,
+.rate > input:checked ~ label:hover ~ label,
+.rate > label:hover ~ input:checked ~ label {
+    color: #c59b08;
+}
+  
+  .timeinput
+{
+    width: 100px;
+}
+.timebtn
+{
+    width: 50px;
+    font-size: 12px;
+}
+
+.entry
+{
+    display: block;
+    width: 350px;
+    line-height: 30px;
+    /* border-bottom: 1px solid #ccc; */
+    background: #eee;
+    margin-bottom:1px;
+    cursor: pointer;
+}
+
+.entry DIV { display: inline-table; }
+
+.entry .time
+{
+    width: 50px;
+    font-family: Monospace;
+    text-align: center !important;
+    /* background: red; */
+}
+
+.entry .del
+{
+    float:right;
+    width: 20px;
+    text-align: center !important;
+    cursor: pointer;
+    display: none;
+}
+
+.entryover
+{
+    background: #ddf;
+}
+
+.entryplaying
+{
+    background: #9ff;
+}
+
+
+.entryover .del{
+    display: block;
+}
+
+
+/* ----------------------------------------------------------------------------------------------------- */
+
+.videopanel
+{
+    background: #eee;
+}
+
+.trackanotate
+{
+    position: relative;
+    background: #fefefe;
+    margin: 0px;
+    overflow: hidden;
+    border: 1px solid #ccc;
+    border-top: 0px;
+}
+
+.trackanotate *
+{
+    -webkit-user-select: none; /* Safari */
+-moz-user-select: none; /* Firefox */
+-ms-user-select: none; /* IE10+/Edge */
+user-select: none; /* Standard */
+}
+
+.trackvideo
+{
+    width: 500px;
+    margin:auto;
+    display: block;
+}
+
+.trackslider
+{
+    height: 8px;
+    background: #cecece;
+    cursor:pointer;
+    overflow: hidden;
+}
+
+.tracksliderpos
+{
+    height: 100%;
+    background: #777;
+    transition: width 0.2s;
+}
+
+.trackpanel
+{
+    position: relative;
+	/* margin-top: 20px; */
+	/* margin-bottom: 20px; */
+/* 	background: rgba( 0, 0, 0, 0.1 ); */
+	/* padding: 15px; */
+    /* background: red; */
+}
+
+.trackbutton
+{
+	margin: 10px;
+	color: black;
+	display: inline-flex;
+	cursor: pointer;
+}
+
+.trackright
+{
+    position: absolute;
+    right: 0px;
+    top:10px;
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 20px;
+}
+
+
+.trackleft
+{
+    position: absolute;
+    left: 10px;
+    top:15px;
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 20px;
+}
+
+.trackrate, .trackrateselected
+{
+    color: #999;
+    display: inline-flex;
+    padding: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    cursor: pointer;
+}
+
+.trackrateselected
+{
+    color: #000;
+}
+
+.tracklist
+{
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    width: 100%;
+    height: 100%;
+    background: #ddd;
+    border-top: 1px solid #ccc;
+    /* background: red; */
+}
+
+
+.trackruler
+{
+    position: relative;
+    height:45px;
+    font-size: 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: left 0.1s;
+}
+
+.trackrulermark
+{
+    position: absolute;
+    top: 0px;
+    width: 0px;
+    border-left: 1px solid #ccc;
+    height: 5px;
+}
+
+.trackrulerlabel
+{
+    position: absolute;
+    top: 0px;
+    width: 0px;
+    border-left: 1px solid #777;
+    height: 10px;
+    padding-top: 5px;
+    font-size: 11px;
+    pointer-events: none;
+}
+
+.trackcursor
+{
+    position: absolute;
+    border-left: 1px solid rgba( 255, 0, 0, 0.5 );
+    transition: left 0.2s;
+}
+
+.trackcontrol
+{
+    position: relative;
+}
+
+.zoomInControl, .zoomOutControl, .zoomTextDisplay, .trackaddbutton, .trackaddrecording
+{
+    /* background: red; */
+    overflow: visible;
+    position: absolute;
+    width: 25px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    right: 5px;
+    top: -23px;
+    border-radius: 8px;
+}
+
+.zoomTextDisplay
+{
+    font-size: 12px;
+    font-weight: normal;
+    right: 30px;
+    width: 30px;
+    border: 0px;
+    color: #777;
+}
+
+.zoomOutControl
+{
+    right: 60px;
+}
+
+.trackaddbutton, .trackaddrecording
+{
+    right: auto;
+    left: 10px;
+    width: 110px;
+    background: #ddffff;
+}
+
+.trackaddrecording
+{
+    left: 130px;
+    width: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.trackempty
+{
+    height: 100%;
+    width: 100%;
+    color: #555;
+}
+
+.track
+{
+    height: 30px;
+    /* border-top: 1px solid #ccc; */
+    border-bottom: 1px solid #ccc;
+    position: relative;
+    text-align: left;
+    transition: left 0.2s;
+    background: white;
+}
+
+.trackselected
+{
+    background: #ffddff;
+    /* border-top: 1px solid #000; */
+    /* border-bottom: 1px solid #000; */
+}
+
+.tracklabel
+{
+    position: absolute;
+    font-size: 12px;
+    color: #000;
+    padding-left: 10px;
+    line-height: 30px;
+    top: 0px;
+    left: 0px;
+    z-index: 1000;
+    pointer-events: none;
+    transition: left 0.2s;
+
+}
+
+
+.trackrange
+{
+    position: absolute;
+    height: 100%;
+    width: 10px;
+    background: rgba( 0, 355, 355, 0.3);
+    top: 0px;
+    cursor: pointer;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+}
+
+.trackrangeselected
+{
+    background: rgba( 255, 150, 255, 1);
+}
+
+.trackrangerecording
+{
+    background: #FF0000;
+}
+
+
+.trackrangemoveleft, .trackrangemoveright
+{
+    position: absolute;
+    height: 100%;
+    width: 10px;
+    top:0px;
+    cursor: w-resize;
+    /* background: rgba( 255, 0, 0, 0.3 ); */
+}
+.trackrangemoveright
+{
+    cursor: e-resize;
+
+}
+
+.trackrecording
+{
+    background: red;
+    color: white;
+}
+
+.reporttable
+{
+    font-size: 14px;
+    line-height: 20px;
+    margin-bottom: 20px;
+}
+
+.reporttable TD, .reporttable TH
+{
+    height: 30px;
+    vertical-align: middle;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.reportselected
+{
+    background: rgba( 255, 0, 255, 0.3);
+}
+
+.wavecontainer
+{
+    overflow: hidden;
+}
