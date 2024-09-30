@@ -1,16 +1,35 @@
 # Audio and Video Segmentation using Wavesurfer
 
-This project enables segmentation of audio and video files for various use cases. Wavesurfer.js provides features such as zooming, adjusting playback speed, and the ability to add new tracks and record segments for each of them. This UI allows users to record segments, classify and transcribe at a segment level, and remove and recreate segments as needed. Additionally, it provides the ability to classify and transcribe at the full call audio level.
+This repository enables advanced audio and video segmentation using **Wavesurfer.js**, supporting a wide range of applications where precise, segment-level data annotation is critical. It is particularly valuable for organizations leveraging **Large Language Models (LLMs)** or employing **Reinforcement Learning with Human Feedback (RLHF)** to fine-tune models for tasks requiring detailed human input. With its flexible user interface, the tool facilitates classification and transcription at both the segment and full audio levels, making it ideal for enhancing large-scale AI models across various domains, including but not limited to healthcare, autonomous systems, media, and customer service.
 
 ## Features
 
 - Zoom in/out on audio and video tracks
-- Adjust playback speed
-- Add new tracks
-- Record segments for each track
-- Classify and transcribe segments
+- Adjust playback speed for careful examination of content
+- Add multiple annotation tracks for multi-layered analysis
+- Record and edit segments for each track
+- Classify and transcribe individual segments
 - Remove and recreate segments
 - Classify and transcribe full call audio
+- User-friendly interface for efficient annotation
+
+## Industry Use Cases
+
+The following are examples of how this solution can be applied in various industries. The versatility of audio and video segmentation allows organizations across different sectors to fine-tune LLMs (Large Language Models), improve Supervised Fine-Tuning (SFT) processes, and leverage Reinforcement Learning with Human Feedback (RLHF) for more precise data annotations. These examples are intended to showcase potential applications, but the solution can be customized for many other AI-driven workflows that rely on human feedback for model improvement:
+
+1. **Healthcare & Surgeries**: Segment surgical videos to train models for medical procedures, improving AI in diagnosis and surgical assistance by using detailed human feedback from expert-annotated datasets.
+
+2. **Autonomous Driving**: Annotate driving scenarios from video footage to refine autonomous vehicle models. Human feedback from segmentation helps AI models better understand complex road environments and improve decision-making.
+
+3. **Media & Sports**: Break down game footage into key plays, enabling broadcasters and sports analysts to fine-tune models for generating real-time statistics or enhancing commentary using RLHF techniques.
+
+4. **Customer Service Analytics**: Segment call center audio for improved sentiment analysis. Human feedback at the segment level allows AI models to better capture customer sentiments, enhancing interaction models and feedback loops.
+
+5. **Security & Surveillance**: Annotate surveillance footage to improve AI models used in identifying potential security threats. Human annotations provide critical feedback for refining detection models in real-time security applications.
+
+6. **Entertainment & Content Creation**: Use this solution to label and segment video or audio content. Human-in-the-loop feedback helps generative AI models better understand audience preferences, improving content recommendations and creation.
+
+While the examples above highlight key industries, this tool is adaptable for any application where human feedback is essential for improving model accuracy. By leveraging **RLHF** and **SFT**, businesses can gather high-quality labeled data to significantly enhance their AI models.
 
 ## Screenshots
 
