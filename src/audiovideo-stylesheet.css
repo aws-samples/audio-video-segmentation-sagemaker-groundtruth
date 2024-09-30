@@ -1,4 +1,3 @@
-
   #waveform {
       margin-top: 10px;
       background-color: #e1e6d5;
@@ -11,6 +10,9 @@
   *{
     margin: 0;
     padding: 0;
+}
+.custom-dropdown-width {
+    width: 100px;
 }
 .rate {
     float: left;
@@ -260,7 +262,7 @@ user-select: none; /* Standard */
     position: relative;
 }
 
-.zoomInControl, .zoomOutControl, .zoomTextDisplay, .trackaddbutton, .trackaddrecording
+.trackrulerzoommin, .trackrulerzoomout, .trackrulerzoomtxt, .trackaddbutton, .trackaddrecording
 {
     /* background: red; */
     overflow: visible;
@@ -278,7 +280,7 @@ user-select: none; /* Standard */
     border-radius: 8px;
 }
 
-.zoomTextDisplay
+.trackrulerzoomtxt
 {
     font-size: 12px;
     font-weight: normal;
@@ -288,7 +290,7 @@ user-select: none; /* Standard */
     color: #777;
 }
 
-.zoomOutControl
+.trackrulerzoomout
 {
     right: 60px;
 }

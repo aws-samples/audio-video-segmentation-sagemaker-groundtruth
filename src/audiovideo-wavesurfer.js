@@ -1,7 +1,7 @@
 var tagData = JSON.parse($('#document-metadata').text());
 var video_source = $('#document-video').text().replace(/&amp;/g, '&');
 console.log('Video Source: ' + video_source);
-        
+let currentRecording = null;        
 var video = $('#video')[0];
 var canvas = $('#drawcanvas')[0];
 var txtSeparator = ': ';
@@ -95,7 +95,7 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
     var czoomTxt = $('<div>').addClass('trackrulerzoomtxt').html('');
     var czoomOut = $('<div>').addClass('trackrulerzoomout').html('-').click(zoomOut);
     var cadd = $('<div>').addClass('trackaddbutton').html('Add New Track').click(addTrack);
-    var crec = $('<div>').addClass('trackaddrecording').click(recording);
+    var crec = $('<div>').addClass('trackaddrecording').html('Begin Recording').click(recording);
     endRecording();
     tcontrols.append(czommIn, czoomTxt, czoomOut, cadd, crec);
     // video positioning functions
@@ -189,7 +189,7 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
         videoPosUpdate();
         videoRate(1);
         panel.show();
-        $(document.body).on('keydown', keyDown);
+        $('.trackrange, .track').on('keydown', keyDown);
         $(document.body).on('keyup', keyUp);
         setHeight();
         viewTotalLen = video.duration;
@@ -236,38 +236,57 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
         if (!e.ctrlKey) window.ctrlKey = false;
         if (!e.altKey) window.altKey = false;
     }
-    function keyDown(e) {
-        var key = e.keyCode;
-        var dt = 1;
-        if (e.shiftKey) window.shiftKey = true;
-        if (e.ctrlKey) window.ctrlKey = true;
-        if (e.altKey) window.altKey = true;
-        if (key == lastKey) {
-            if ((now() - lastKeyTs) < 200)
-                var dt = 4 + lastDt++
-            else
-                var dt = lastDt = 1;
-        }
-        // console.log( e.keyCode, dt );
-        if (key == 32) {
-            if (video.paused)
-                videoPlay();
-            else videoPause();
-            return false;
-        }
-        else if (key == 37) // left
-        {
-            videoRewind();
-        }
-        else if (key == 39) // right
-        {
-            videoForward();
-        }
-        else if ((e.keyCode == 46 || e.key == 46 || e.witch == 46 || e.keyCode == 8 || e.key == 8 || e.witch == 8)) {
-            if (selectedRange) return deleteRange(selectedRange);
-            if (selectedTrack) return deleteTrack(selectedTrack);
-        }
-    }
+
+		function keyDown(e) {
+		    var key = e.keyCode;
+		    var dt = 1;
+		    if (e.shiftKey) window.shiftKey = true;
+		    if (e.ctrlKey) window.ctrlKey = true;
+		    if (e.altKey) window.altKey = true;
+		    if (key == lastKey) {
+		        if ((now() - lastKeyTs) < 200)
+		            var dt = 4 + lastDt++
+		        else
+		            var dt = lastDt = 1;
+		    }
+		    
+		    // Handle space key for play/pause
+		    if (key == 32) {
+		        if (video.paused)
+		            videoPlay();
+		        else videoPause();
+		        return false;
+		    }
+		    // Handle left arrow for rewind
+		    else if (key == 37) {
+		        videoRewind();
+		    }
+		    // Handle right arrow for forward
+		    else if (key == 39) {
+		        videoForward();
+		    }
+		    // Handle delete and backspace
+		    else if (key === 46 || key === 8) { // 46 is Delete, 8 is Backspace
+		        if ($(e.target).hasClass('trackrange')) {
+		            e.preventDefault(); // Prevent default action
+		            var confirmDelete = confirm("Are you sure you want to delete this range?");
+		            if (confirmDelete) {
+		                deleteRange($(e.target));
+		            }
+		            return false;
+		        } else if ($(e.target).hasClass('track')) {
+		            e.preventDefault(); // Prevent default action
+		            var confirmDelete = confirm("Are you sure you want to delete this track?");
+		            if (confirmDelete) {
+		                deleteTrack($(e.target));
+		            }
+		            return false;
+		        }
+		    }
+		    
+		    // If we've reached this point, allow the default action
+		    return true;
+		}
 
     lastZoom = 0;
     viewPos = 0;
@@ -422,7 +441,7 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
         modal('Add New Annotation Track', content, 'Add', add);
     }
 		
-		 function report() {
+		function report() {
 		    if (!reportObj) return;
 		    tagData.streams = {};
 		    var ranges = [];
@@ -430,7 +449,15 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
 		        trackList[t].forEach(function (r, idx) {
 		            var id = simplify(t + txtSeparator + idx);
 		            var c = t.split(txtSeparator)[0];
-		            ranges.push({ start: r[0], end: r[1], id: id, tag: t, category: c, label: r[2], emotion: r[3] });
+		            ranges.push({ 
+		                start: r.start, 
+		                end: r.end, 
+		                id: id, 
+		                tag: t, 
+		                category: c, 
+		                text: r.text || '', 
+		                emotion: r.emotion || '' 
+		            });
 		        });
 		    }
 		    ranges.sort(function (a, b) {
@@ -449,90 +476,112 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
 		    tr.append($('<TH>').text('-'));
 		    tr.append($('<TH>').text('End'));
 		    tr.append($('<TH>').text('Tag'));
-		    // Optionally, add Text box and Dropdown Labels like below
-		    // 1. Complete all segmentations in the audio or video file before you can enter data into the Text box and Dropdowns. Otherwise data will not be stored.
-		    // 2. If not required, you can remove these segments
-		    tr.append($('<TH>').text('Text')); // Text box label
-		    tr.append($('<TH>').text('Emotion')); // New Header for Dropdown
+		    tr.append($('<TH>').text('Text'));
+		    tr.append($('<TH>').text('Emotion'));
 		    thead.append(tr);
 		    tab.append(thead);
 		    var streams = {};
-				ranges.forEach(function (r) {
-				    var tmp = r.tag.split(txtSeparator);
-				    var category = tmp[0];
-				    var tag = tmp[1];
-				    if (!streams[category]) streams[category] = [];
-				    streams[category].push({ id: tag, start: r.start, end: r.end, label: r.label });
-				    
-				    var tr = $('<TR>').prop('id', 'report' + r.id).addClass('reporttr');
-				    tr.append($('<TD>').text(ftime(r.start, 1)));
-				    tr.append($('<TD>').text('-'));
-				    tr.append($('<TD>').text(ftime(r.end, 1)));
-				    tr.append($('<TD>').text(r.tag));
-				
-				    // Existing Label Textarea
-				    var transcriptArea = $('<TD>').append($('<textarea>').attr({
-				        name: 'label',
-				        rows: 1, //Adjust number of rows for the text box
-				        cols: 20,
-				        text: r.label
-				    }));
-				    tr.append(transcriptArea);
-				
-				    // New Dropdown for Label
-				    var dropdown = $('<select>').attr({
-				        name: 'emotiontag',
-				        class: 'custom-dropdown-width'
-				    });
-				    var dropdownOptions = ['Happy', 'Angry', 'Neutral', 'Sad', 'Worried']; // Example options
-				    dropdownOptions.forEach(function(option) {
-				        dropdown.append($('<option>').val(option).text(option));
-				    });
-				
-				    // Append the dropdown to a new cell in the row and add it to the table row `tr`
-				    var dropdownCell = $('<TD>').append(dropdown);
-				    tr.append(dropdownCell);
-					
-		        // Event listener for capturing dropdown selection
-		        dropdown.change(function() {
-		            var selectedOption = $(this).val();
-		            r.emotion = selectedOption;
+		
+		    ranges.forEach(function (r) {
+		        var tmp = r.tag.split(txtSeparator);
+		        var category = tmp[0];
+		        var tag = tmp[1];
+		        if (!streams[category]) streams[category] = [];
+		        streams[category].push({ id: tag, start: r.start, end: r.end, text: r.text, emotion: r.emotion });
+		        
+		        var tr = $('<TR>').prop('id', 'report' + r.id).addClass('reporttr');
+		        tr.append($('<TD>').text(ftime(r.start, 1)));
+		        tr.append($('<TD>').text('-'));
+		        tr.append($('<TD>').text(ftime(r.end, 1)));
+		        tr.append($('<TD>').text(r.tag));
+		
+		        // Text area for transcript
+		        var transcriptArea = $('<textarea>').attr({
+		            name: 'label',
+		            rows: 1,
+		            cols: 20
+		        }).val(r.text || '');
+		        
+		        
+		        transcriptArea.on('keydown', function(event) {
+    						event.stopPropagation();
+						}).on('focus', function() {
+    						unselectRange();
+						});
+        	 
+        	  transcriptArea.on('focus', function() {
+            		unselectRange();
+        		});
+		
+		        // Dropdown for emotion
+		        var dropdown = $('<select>').attr({
+		            name: 'emotiontag',
+		            class: 'custom-dropdown-width'
+		        });
+		        var dropdownOptions = ['Happy', 'Angry', 'Neutral', 'Sad', 'Worried'];
+		        dropdownOptions.forEach(function(option) {
+		            dropdown.append($('<option>').val(option).text(option));
+		        });
+		        dropdown.val(r.emotion || '');
+		
+		        tr.append($('<TD>').append(transcriptArea));
+		        tr.append($('<TD>').append(dropdown));
+		
+		        // Event listeners for updating data
+		        transcriptArea.on('input', function() {
+		            r.text = $(this).val();
+		            updateTrackListData(r);
 		        });
 		
-		        // Allow spaces in the textarea without affecting other functionalities
-		        transcriptArea.find('textarea').on('keydown', function (event) {
+		        dropdown.on('change', function() {
+		            r.emotion = $(this).val();
+		            updateTrackListData(r);
+		        });
+		
+		        // Allow spaces in the textarea
+		        transcriptArea.on('keydown', function (event) {
 		            if (event.key === ' ') {
-		                event.stopPropagation(); // Allow space in the textarea
+		                event.stopPropagation();
 		            }
 		        });
 		
-		        transcriptArea.find('textarea').on('input', function () {
-		            r.label = $(this).val();
+		        var deleteButton = $('<TD><i class="fa fa-trash"></i></TD>');
+		        deleteButton.click(function (event) {
+		            var element = $('#' + r.id);
+		            if (element.length) {
+		                deleteRange(element);
+		            }
+		            event.stopPropagation();
 		        });
 		
-		        var deleteButton = $('<TD><i class="fa fa-trash"></i></TD>');
-						deleteButton.click(function (event) {
-								    var element = $('#' + r.id);
-								    if (element.length) {
-								        deleteRange(element);
-								    }
-								    event.stopPropagation();
-						});
-
 		        tr.append(deleteButton);
 		        tab.append(tr);
 		
-						tr.click(function () {
-						    reportSelect(r.id);
-						    var element = $('#' + r.id);
-						    if (element.length) {
-						        playRange(element);
-						    }
-						});
-
+		        tr.click(function () {
+		            reportSelect(r.id);
+		            var element = $('#' + r.id);
+		            if (element.length) {
+		                playRange(element);
+		            }
+		        });
 		    });
+		
 		    tagData.streams = streams;
 		    reportObj.html('').append(tab);
+		}
+
+		// Helper function to update trackList data
+		function updateTrackListData(r) {
+		    var tmp = r.tag.split(txtSeparator);
+		    var category = tmp[0];
+		    var tag = tmp[1];
+		    var rangeIndex = trackList[r.tag].findIndex(function(range) {
+		        return range.start === r.start && range.end === r.end;
+		    });
+		    if (rangeIndex !== -1) {
+		        trackList[r.tag][rangeIndex].text = r.text;
+		        trackList[r.tag][rangeIndex].emotion = r.emotion;
+		    }
 		}
 
 		function reportSelect(id) {
@@ -590,46 +639,90 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
 		    });
 		    drawTracks();
 		}
-
-    function endRecording() {
-        isRecording = false;
-        crec.prop('rec', 0);
-        crec.removeClass('trackrecording');
-        crec.html('Begin Recording')
-        if (!selectedTrack) return;
-        videoPause();
-        recordingRanges = [];
-        fixTrack(selectedTrack);
-    }
-
+  
+		function endRecording() {
+		    console.log("Entering endRecording function");
+		    if (!isRecording) {
+		        console.log("Not recording, exiting endRecording");
+		        return;
+		    }
+		    
+		    isRecording = false;
+		    crec.prop('rec', 0);
+		    crec.removeClass('trackrecording');
+		    crec.html('Begin Recording');
+		    
+		    if (!selectedTrack) {
+		        console.log("No track selected, exiting endRecording");
+		        return;
+		    }
+		    videoPause();
+		    
+		    console.log("Selected tracks:", selectedTrack);
+		    selectedTrack.forEach(function (track) {
+		        console.log("Processing track:", track);
+		        var tname = $(track).prop('name');
+		        console.log("Track name:", tname);
+		        
+		        if (trackList[tname] && trackList[tname].length > 0) {
+		            // Update the last entry instead of creating a new one
+		            var lastEntry = trackList[tname][trackList[tname].length - 1];
+		            lastEntry.end = video.currentTime;
+		            
+		            console.log("Updated entry:", lastEntry);
+		            
+		            var idx = simplify(tname + txtSeparator + (trackList[tname].length - 1));
+		            var r = $('#' + idx);
+		            if (r.length) {
+		                r.removeClass('trackrangerecording');
+		                updateRange(r, lastEntry);
+		            }
+		        }
+		    });
+		    
+		    recordingStartTime = null;
+		    console.log("recordingStartTime reset to null");
+		    
+		    recordingRanges = [];
+		    fixTrack(selectedTrack);
+		    
+		    console.log("Current trackList:", JSON.stringify(trackList, null, 2));
+		    
+		    report();
+		    console.log("Exiting endRecording function");
+		    unselectRange();
+		}
+	
 		function beginRecording() {
 		    if (!selectedTrack) return modal('Record Annotation', 'Select or add a track first');
+		    isRecording = true;
+		    recordingStartTime = video.currentTime;
 		    crec.prop('rec', 1);
 		    crec.addClass('trackrecording');
 		    crec.html('Stop Recording');
 		    
 		    selectedTrack.forEach(function (track) {
-		        // Ensure the track is sanitized or a safe selector
-		        if (typeof track === 'string' && track.match(/^[a-zA-Z0-9-_]+$/)) {
-		            track = $('#' + track); // Assuming track is an id, adjust if it's a class or another selector
-		        } else {
-		            // Handle cases where track is not a simple string or needs different handling
-		            track = $(track);
-		        }
-		
-		        var tname = track.prop('name');
-		        console.log(tname, trackList[tname]);
-		        var idx = simplify(tname + txtSeparator + trackList[tname].length);
-		        var range = [video.currentTime, video.currentTime + 0.5, ''];
-		        trackList[tname].push(range);
-		        var r = addRange(track, range, idx);
+		        var tname = $(track).prop('name');
+		        if (!trackList[tname]) trackList[tname] = [];
+		        
+		        // Create a new entry object instead of an array
+		        var newEntry = {
+		            start: recordingStartTime,
+		            end: recordingStartTime + 0.5, // This will be updated in endRecording
+		            text: '',
+		            emotion: ''
+		        };
+		        
+		        trackList[tname].push(newEntry);
+		        var idx = simplify(tname + txtSeparator + (trackList[tname].length - 1));
+		        var r = addRange($(track), newEntry, idx);
 		        r.addClass('trackrangerecording');
 		        recordingRanges.push(r.prop('id'));
 		    });
 		    
-		    isRecording = true;
 		    playTo = -1;
 		    videoPlay();
+		    unselectRange();
 		}
 
 
@@ -685,18 +778,17 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
     var trackList = {};
     __trackList = trackList;
 
-    function deleteRange(range) {
-        console.log(range);
-        var tname = range.prop('trackname');
-        var range = range.prop('range');
-        var idx = trackList[tname].indexOf(range);
-        if (idx >= 0) trackList[tname].splice(idx, 1);
-        console.log('deleterange', idx, trackList);
-        selectedRange = null;
-        selectedRangeId = -1;
-        drawTracks();
-        endRecording();
-    }
+		function deleteRange(range) {
+		    console.log(range);
+		    var tname = range.prop('trackname');
+		    var rangeData = range.prop('range');
+		    var idx = trackList[tname].indexOf(rangeData);
+		    if (idx >= 0) trackList[tname].splice(idx, 1);
+		    console.log('deleterange', idx, trackList);
+		    range.removeAttr('data-selected').remove();
+		    drawTracks();
+		    endRecording();
+		}
 
     function moveRange(range, track) {
         var tname = range.prop('trackname');
@@ -716,35 +808,39 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
         // console.log( 'orig', tname, r, rid, track.prop('name'), idx );
     }
 
-    function addRange(track, range, idx) {
-        var r = $('<div>').addClass('trackrange');
-        var tw = ruler.width();
-        var pl = calcPos(range[0]);
-        var pr = calcPos(range[1]);
-        var w = pr - pl;
-        r.css({ left: px(pl), width: px(w) });
-        var ml = $('<div>').addClass('trackrangemove trackrangemoveleft').css({ left: px(-5) });
-        var mr = $('<div>').addClass('trackrangemove trackrangemoveright').css({ right: px(-5) });
-        ml.on('mousedown', rangeMoveLeft);
-        mr.on('mousedown', rangeMoveRight);
-        r.prop('id', idx);
-        r.append(ml, mr);
-        r.prop('idx', idx).prop('track', track).prop('trackname', track.prop('name'));
-        r.prop('range', range);
-        if (idx == selectedRangeId) {
-            r.addClass('trackrangeselected');
-            selectedRange = r;
-        }
-        // console.log( 'ADDRANGE', isRecording, idx, recordingRanges );
-        if (isRecording && recordingRanges.indexOf(idx) >= 0) r.addClass('trackrangerecording');
-        r.click(function () {
-            playRange($(this));
-            return false;
-        })
-        r.on('mousedown', rangeDragStart);
-        track.append(r);
-        return r;
-    }
+		function addRange(track, range, idx) {
+		    var r = $('<div>').addClass('trackrange');
+		    var tw = ruler.width();
+		    var pl = calcPos(range.start);
+		    var pr = calcPos(range.end);
+		    var w = pr - pl;
+		    r.css({ left: px(pl), width: px(w) });
+		    var ml = $('<div>').addClass('trackrangemove trackrangemoveleft').css({ left: px(-5) });
+		    var mr = $('<div>').addClass('trackrangemove trackrangemoveright').css({ right: px(-5) });
+		    ml.on('mousedown', rangeMoveLeft);
+		    mr.on('mousedown', rangeMoveRight);
+		    r.prop('id', idx);
+		    r.append(ml, mr);
+		    r.prop('idx', idx).prop('track', track).prop('trackname', track.prop('name'));
+		    r.prop('range', range);
+		    if (idx == selectedRangeId) {
+		        r.addClass('trackrangeselected');
+		        selectedRange = r;
+		    }
+		    r.click(function () {
+		        playRange($(this));
+		        return false;
+		    })
+		    r.click(function (e) {
+        		e.stopPropagation();
+        		selectRange($(this));
+        		playRange($(this));
+        		return false;
+    		});
+		    r.on('mousedown', rangeDragStart);
+		    track.append(r);
+		    return r;
+		}
 
     var rangeDragging = null;
     function rangeDragStart() {
@@ -870,15 +966,19 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
         obj.css({ left: px(pl), width: px(w) });
     }
 
-    function selectRange(r) {
-        if (isRecording) endRecording();
-        var idx = r.prop('idx');
-        selectedRange = r;
-        selectedRangeId = idx;
-        selectTrack(r.prop('track')[0]);
-        $('.trackrange').removeClass('trackrangeselected');
-        r.addClass('trackrangeselected');
-    }
+		function selectRange(r) {
+		    if (isRecording) endRecording();
+		    $('.trackrange').removeClass('trackrangeselected').removeAttr('data-selected');
+		    r.addClass('trackrangeselected').attr('data-selected', 'true');
+		    selectTrack(r.prop('track')[0]);
+		}
+				    
+		function unselectRange() {
+		    selectedRange = null;
+		    selectedRangeId = -1;
+		    $('.trackrange').removeClass('trackrangeselected');
+		    $('.reporttr').removeClass('reportselected');
+		}
 
     if (!tagData.categories) tagData.categories = {};
     // console.log( 'tagData', tagData.streams );
@@ -1013,33 +1113,31 @@ function tracks(domObj, videoObj, videoSource, tagData, reportObj) {
 
 }
 
-function saveAnnotations() {
-    var reasons = [];
-    var rchecks = $('.reason');
-    for (var i = 0; i < rchecks.length; i++)
-        reasons.push(rchecks[i].id);
-    var reasonToAbort = false;
-    tagData.endTimestamp = new Date().getTime();
-    tagData.endUTCTime = new Date().toUTCString();
-    tagData.elapsedTime = tagData.endTimestamp - tagData.startTimestamp;
-
-		reasons.forEach(function (r) {
-		    var sanitizedR = r.replace(/[^a-zA-Z0-9-_]/g, ''); // Sanitize the input
-		    if (!$('#' + sanitizedR).prop('checked')) {
-		        delete tagData[$('#' + sanitizedR).attr('fieldname')];
-		        return;
+		function saveAnnotations() {
+		    var reasons = [];
+		    var rchecks = $('.reason');
+		    for (var i = 0; i < rchecks.length; i++)
+		        reasons.push(rchecks[i].id);
+		    var reasonToAbort = false;
+		    tagData.endTimestamp = new Date().getTime();
+		    tagData.endUTCTime = new Date().toUTCString();
+		    tagData.elapsedTime = tagData.endTimestamp - tagData.startTimestamp;
+		
+		    reasons.forEach(function (r) {
+		        if (!$('#' + r).prop('checked')) {
+		            delete tagData[$('#' + r).attr('fieldname')];
+		            return;
+		        }
+		        tagData[$('#' + r).attr('fieldname')] = true;
+		        reasonToAbort = true;
+		    });
+		    if (Object.keys(tagData.streams).length == 0 && !reasonToAbort) {
+		        alert('You need to add anotations to the video before submiting');
+		        return null;
 		    }
-		    tagData[$('#' + sanitizedR).attr('fieldname')] = true;
-		    reasonToAbort = true;
-		});
-
-    if (Object.keys(tagData.streams).length == 0 && !reasonToAbort) {
-        alert('You need to add anotations to the video before submiting');
-        return null;
-    }
-    console.log(tagData);
-    return tagData;
-}
+		    console.log(tagData);
+		    return tagData;
+		}
 
         var tr = new tracks($('#videotrackanotate'), $('#video'), video_source, tagData, $('#report'));
 
@@ -1065,5 +1163,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 e.stopPropagation();
             }
         }, true); // The "true" parameter ensures this event handler captures the event during the capturing phase, which occurs before the default action.
+    }
+});
+
+$('#textTranslationFinalArea').on('keydown', function(e) {
+    // Allow default behavior for all keys in this text area
+    e.stopPropagation();
+});
+
+$(document).on('click', function(e) {
+    if (!$(e.target).closest('.trackrange, .reporttr').length) {
+        unselectRange();
     }
 });
