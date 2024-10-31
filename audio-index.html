@@ -39,9 +39,16 @@
     <link rel="stylesheet" href="audiovideo-stylesheet.css">
 </head>
 
+<style>
+	.rate:not(:checked) > label:before {
+    content: '\2605 ';  /* Unicode escape sequence for star */
+}
+</style>
+
 <body>
     <!-- Hidden div to store video document -->
-    <div id='document-video' style="display: none;">{{ task.input.taskObject | grant_read_access }}</div>
+    <div id='document-video' style="display: none;">{{ task.input.source-ref | grant_read_access }}</div>
+    <!-- If you are using the PreLambda from this repository, modify above to <div id='document-video' style="display: none;">{{ task.input.taskObject | grant_read_access }}</div> -->
     
     <!-- Hidden div to store metadata -->
     <div id='document-metadata' style="display: none;">
@@ -74,6 +81,8 @@
                             <div id="videotrackanotate"></div>
                         </div>
                     </div>
+                    <div class="col-6" id="right" style="flex: 1; display: flex; flex-direction: column;">
+                      <br>
                     <!-- Right panel for annotation inputs -->
                         <div id="report"></div>
                         <br><br>
