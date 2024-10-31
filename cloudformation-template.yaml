@@ -1,0 +1,233 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Test deployment of JS and CSS files for SageMaker Ground Truth custom UI'
+
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-assets-${AWS::AccountId}'
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - '*'
+            ExposedHeaders:
+              - 'ETag'
+              - 'Access-Control-Allow-Origin'
+            MaxAge: 3000
+
+  CloudFrontOriginAccessIdentity:
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub 'OAI for ${AWS::StackName}'
+
+  BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+            Action: 's3:GetObject'
+            Resource: !Sub '${S3Bucket.Arn}/*'
+
+  CloudFrontDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: 'index.html'
+        Origins:
+          - DomainName: !GetAtt S3Bucket.RegionalDomainName
+            Id: S3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: https-only
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Headers:
+              - Origin
+              - Access-Control-Request-Headers
+              - Access-Control-Request-Method
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 's3:PutObject'
+                  - 's3:PutObjectAcl'
+                  - 's3:GetObject'
+                  - 's3:ListBucket'
+                Resource: 
+                  - !Sub '${S3Bucket.Arn}'
+                  - !Sub '${S3Bucket.Arn}/*'
+
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.8
+      Timeout: 300
+      Code:
+        ZipFile: |
+          import boto3
+          import urllib.request
+          import json
+          import traceback
+          
+          def download_file(url, file_type):
+              try:
+                  print(f"Downloading {file_type} file from: {url}")
+                  response = urllib.request.urlopen(url)
+                  if response.getcode() != 200:
+                      raise Exception(f"Failed to download {file_type} file. Status code: {response.getcode()}")
+                  content = response.read()
+                  print(f"Successfully downloaded {file_type} file. Size: {len(content)} bytes")
+                  return content
+              except Exception as e:
+                  print(f"Error downloading {file_type} file: {str(e)}")
+                  traceback.print_exc()
+                  raise
+
+          def upload_to_s3(s3_client, bucket, key, content, content_type):
+              try:
+                  print(f"Uploading file to S3: {bucket}/{key}")
+                  response = s3_client.put_object(
+                      Bucket=bucket,
+                      Key=key,
+                      Body=content,
+                      ContentType=content_type,
+                      ACL='private'
+                  )
+                  print(f"Successfully uploaded file to S3. ETag: {response.get('ETag')}")
+                  
+                  # Verify upload
+                  head_response = s3_client.head_object(Bucket=bucket, Key=key)
+                  print(f"File verification - Content Type: {head_response['ContentType']}, Size: {head_response['ContentLength']}")
+              except Exception as e:
+                  print(f"Error uploading to S3: {str(e)}")
+                  traceback.print_exc()
+                  raise
+
+          def handler(event, context):
+              print(f"Received event: {json.dumps(event)}")
+              try:
+                  if event['RequestType'] == 'Create':
+                      s3 = boto3.client('s3')
+                      bucket_name = event['ResourceProperties']['BucketName']
+                      
+                      # Download and upload JS file
+                      js_url = 'https://raw.githubusercontent.com/aws-samples/audio-video-segmentation-sagemaker-groundtruth/5b4770970a8550403f86cb32d2df7be0c313a196/src/audiovideo-wavesurfer.js'
+                      js_content = download_file(js_url, 'JavaScript')
+                      upload_to_s3(s3, bucket_name, 'audio-segmentation-ui.js', js_content, 'application/javascript')
+                      
+                      # Download and upload CSS file
+                      css_url = 'https://raw.githubusercontent.com/aws-samples/audio-video-segmentation-sagemaker-groundtruth/5b4770970a8550403f86cb32d2df7be0c313a196/src/audiovideo-stylesheet.css'
+                      css_content = download_file(css_url, 'CSS')
+                      upload_to_s3(s3, bucket_name, 'audio-segmentation-ui.css', css_content, 'text/css')
+                      
+                      print("All files uploaded successfully")
+                      send_cfn_response(event, context, "SUCCESS", {
+                          'Message': 'Files uploaded successfully',
+                          'S3Bucket': bucket_name
+                      })
+                  elif event['RequestType'] == 'Delete':
+                      print("Delete request - no action needed")
+                      send_cfn_response(event, context, "SUCCESS", {})
+                  else:
+                      print(f"Unexpected request type: {event['RequestType']}")
+                      send_cfn_response(event, context, "FAILED", {
+                          'Error': f"Unexpected request type: {event['RequestType']}"
+                      })
+              except Exception as e:
+                  error_msg = str(e)
+                  print(f"Error: {error_msg}")
+                  traceback.print_exc()
+                  send_cfn_response(event, context, "FAILED", {
+                      'Error': error_msg
+                  })
+
+          def send_cfn_response(event, context, response_status, response_data):
+              try:
+                  response_body = json.dumps({
+                      "Status": response_status,
+                      "Reason": "See the details in CloudWatch Log Stream: " + context.log_stream_name,
+                      "PhysicalResourceId": context.log_stream_name,
+                      "StackId": event['StackId'],
+                      "RequestId": event['RequestId'],
+                      "LogicalResourceId": event['LogicalResourceId'],
+                      "Data": response_data
+                  })
+                  
+                  headers = {
+                      'content-type': '',
+                      'content-length': str(len(response_body))
+                  }
+                  
+                  print(f"Sending response to CloudFormation: {response_body}")
+                  req = urllib.request.Request(
+                      event['ResponseURL'], 
+                      data=response_body.encode('utf-8'),
+                      headers=headers,
+                      method='PUT'
+                  )
+                  
+                  with urllib.request.urlopen(req) as response:
+                      print(f"CloudFormation response status code: {response.getcode()}")
+                      print(f"CloudFormation response: {response.read().decode()}")
+              except Exception as e:
+                  print(f"Failed to send response to CloudFormation: {str(e)}")
+                  traceback.print_exc()
+
+  DeploymentCustomResource:
+    Type: 'Custom::Deployment'
+    Properties:
+      ServiceToken: !GetAtt LambdaFunction.Arn
+      BucketName: !Ref S3Bucket
+
+Outputs:
+  S3BucketName:
+    Description: 'Name of the S3 bucket containing the assets'
+    Value: !Ref S3Bucket
+  JavaScriptUrl:
+    Description: 'URL for the JavaScript file'
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}/audio-segmentation-ui.js'
+  CssUrl:
+    Description: 'URL for the CSS file'
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}/audio-segmentation-ui.css'
+  CloudFrontDomain:
+    Description: 'CloudFront Distribution Domain'
+    Value: !GetAtt CloudFrontDistribution.DomainName
