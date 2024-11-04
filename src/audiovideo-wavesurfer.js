@@ -1,3 +1,9 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: MIT-0
+
+// This file is part of the AWS audio-video-segmentation-sagemaker-groundtruth project.
+// https://github.com/aws-samples/audio-video-segmentation-sagemaker-groundtruth
+
 var tagData = JSON.parse($('#document-metadata').text());
 var video_source = $('#document-video').text().replace(/&amp;/g, '&');
 console.log('Video Source: ' + video_source);
