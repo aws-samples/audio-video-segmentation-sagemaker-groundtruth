@@ -21,13 +21,23 @@
     "eslint-plugin-import": "2.22.1",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "4.2.1",
-    "vite": "^4.5.3",
+    "vite": "^5.4.10",
     "vite-plugin-banner": "0.7.0"
   },
   "dependencies": {
     "ajv": "8.12.0",
+    "bootstrap": "^5.3.3",
     "fabric": "5.3.0",
+    "font-awesome": "^4.7.0",
+    "jquery": "^3.7.1",
+    "jquery-ui": "^1.14.1",
     "lodash": "4.17.21",
-    "wavesurfer.js": "6.0.0"
-  }
+    "popper.js": "^1.16.1",
+    "wavesurfer.js": "^6.0.0"
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": []
 }
