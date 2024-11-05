@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Test deployment of JS and CSS files for SageMaker Ground Truth custom UI'
+Description: 'Test deployment of JS and CSS files for SageMaker Ground Truth custom UI with CloudFront logging enabled'
 
 Resources:
   S3Bucket:
@@ -19,6 +19,68 @@ Resources:
               - 'ETag'
               - 'Access-Control-Allow-Origin'
             MaxAge: 3000
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  CloudFrontLogsBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-cf-logs-${AWS::AccountId}'
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldLogs
+            Status: Enabled
+            ExpirationInDays: 90
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  CloudFrontLogsBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref CloudFrontLogsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'AWSLogDeliveryWrite'
+            Effect: Allow
+            Principal:
+              Service: 'delivery.logs.amazonaws.com'
+            Action:
+              - 's3:PutObject'
+            Resource: !Sub '${CloudFrontLogsBucket.Arn}/cloudfront-logs/*'
+          - Sid: 'AWSLogDeliveryAclCheck'
+            Effect: Allow
+            Principal:
+              Service: 'delivery.logs.amazonaws.com'
+            Action: 's3:GetBucketAcl'
+            Resource: !GetAtt CloudFrontLogsBucket.Arn
+          - Sid: 'AWSLogDeliveryAclPermissionCheck'
+            Effect: Allow
+            Principal:
+              Service: 'delivery.logs.amazonaws.com'
+            Action:
+              - 's3:PutObjectAcl'
+            Resource: !Sub '${CloudFrontLogsBucket.Arn}/cloudfront-logs/*'
+          - Sid: 'EnforceSSLOnly'
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub '${CloudFrontLogsBucket.Arn}'
+              - !Sub '${CloudFrontLogsBucket.Arn}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': false
 
   CloudFrontOriginAccessIdentity:
     Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
@@ -45,6 +107,10 @@ Resources:
       DistributionConfig:
         Enabled: true
         DefaultRootObject: 'index.html'
+        Logging:
+          Bucket: !GetAtt CloudFrontLogsBucket.DomainName
+          IncludeCookies: false
+          Prefix: 'cloudfront-logs/'
         Origins:
           - DomainName: !GetAtt S3Bucket.RegionalDomainName
             Id: S3Origin
@@ -85,12 +151,12 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action: 
+                Action:
                   - 's3:PutObject'
                   - 's3:PutObjectAcl'
                   - 's3:GetObject'
                   - 's3:ListBucket'
-                Resource: 
+                Resource:
                   - !Sub '${S3Bucket.Arn}'
                   - !Sub '${S3Bucket.Arn}/*'
 
@@ -107,7 +173,8 @@ Resources:
           import urllib.request
           import json
           import traceback
-          
+          import sys
+
           def download_file(url, file_type):
               try:
                   print(f"Downloading {file_type} file from: {url}")
@@ -231,3 +298,6 @@ Outputs:
   CloudFrontDomain:
     Description: 'CloudFront Distribution Domain'
     Value: !GetAtt CloudFrontDistribution.DomainName
+  CloudFrontLogsBucket:
+    Description: 'Name of the S3 bucket containing CloudFront logs'
+    Value: !Ref CloudFrontLogsBucket
